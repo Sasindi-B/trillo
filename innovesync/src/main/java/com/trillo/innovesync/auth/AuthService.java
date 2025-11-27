@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 
 import com.trillo.innovesync.exception.InvalidCredentialsException;
 import com.trillo.innovesync.traveller.TravellerService;
+import com.trillo.innovesync.businessowner.BusinessOwnerService;
 import com.trillo.innovesync.auth.UserAccount;
 import com.trillo.innovesync.auth.Role;
 
@@ -12,10 +13,14 @@ public class AuthService {
 
     private final UserAccountService userAccountService;
     private final TravellerService travellerService;
+    private final BusinessOwnerService businessOwnerService;
 
-    public AuthService(UserAccountService userAccountService, TravellerService travellerService) {
+    public AuthService(UserAccountService userAccountService,
+            TravellerService travellerService,
+            BusinessOwnerService businessOwnerService) {
         this.userAccountService = userAccountService;
         this.travellerService = travellerService;
+        this.businessOwnerService = businessOwnerService;
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -47,6 +52,20 @@ public class AuthService {
                                     traveller.getEmail(),
                                     traveller.getFullName(),
                                     Role.TRAVELLER);
+                        }))
+                // Then business owners stored in MongoDB
+                .or(() -> businessOwnerService.authenticate(username, request.getPassword())
+                        .map(owner -> {
+                            UserAccount principal = new UserAccount(
+                                    owner.getEmail(),
+                                    owner.getBusinessName(),
+                                    owner.getPasswordHash(),
+                                    Role.BUSINESS_OWNER);
+                            return new LoginResponse(
+                                    userAccountService.issueToken(principal),
+                                    owner.getEmail(),
+                                    owner.getBusinessName(),
+                                    Role.BUSINESS_OWNER);
                         }))
                 .orElseThrow(() -> new InvalidCredentialsException("Invalid username or password"));
     }
