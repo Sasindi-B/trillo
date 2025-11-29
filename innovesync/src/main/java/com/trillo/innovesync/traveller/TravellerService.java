@@ -52,6 +52,20 @@ public class TravellerService {
                 .filter(t -> passwordEncoder.matches(rawPassword, t.getPasswordHash()));
     }
 
+    public TravellerSettingsResponse getSettings(String idOrEmail) {
+        Traveller traveller = findByIdOrEmail(idOrEmail);
+        return TravellerSettingsResponse.from(traveller.getSettings());
+    }
+
+    public TravellerSettingsResponse updateSettings(String idOrEmail, TravellerSettingsRequest request) {
+        Objects.requireNonNull(request, "request");
+        Traveller traveller = findByIdOrEmail(idOrEmail);
+        TravellerSettings updated = mapRequestToSettings(request);
+        traveller.setSettings(updated);
+        travellerRepository.save(traveller);
+        return TravellerSettingsResponse.from(updated);
+    }
+
     private void validatePasswords(String password, String confirmPassword) {
         if (!Objects.equals(password, confirmPassword)) {
             throw new IllegalArgumentException("Passwords do not match");
@@ -77,5 +91,32 @@ public class TravellerService {
 
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private Traveller findByIdOrEmail(String idOrEmail) {
+        if (idOrEmail == null || idOrEmail.trim().isEmpty()) {
+            throw new IllegalArgumentException("Traveller id or email is required");
+        }
+        String trimmed = idOrEmail.trim();
+        return (trimmed.contains("@")
+                ? travellerRepository.findByEmailIgnoreCase(normalizeEmail(trimmed))
+                : travellerRepository.findById(trimmed))
+                .orElseThrow(() -> new IllegalArgumentException("Traveller not found: " + trimmed));
+    }
+
+    private TravellerSettings mapRequestToSettings(TravellerSettingsRequest request) {
+        TravellerSettings settings = new TravellerSettings();
+        settings.setEmailAlertsEnabled(request.getEmailAlertsEnabled());
+        settings.setSmsAlertsEnabled(request.getSmsAlertsEnabled());
+        settings.setPushNotificationsEnabled(request.getPushNotificationsEnabled());
+        settings.setDigestCadence(request.getDigestCadence().trim());
+        settings.setProfileVisibility(request.getProfileVisibility().trim());
+        settings.setDataSharingEnabled(request.getDataSharingEnabled());
+        settings.setAutoSaveTripsEnabled(request.getAutoSaveTripsEnabled());
+        settings.setLanguage(request.getLanguage().trim());
+        settings.setCurrency(request.getCurrency().trim());
+        settings.setTimezone(request.getTimezone().trim());
+        settings.setTravelVibes(request.getTravelVibes());
+        return settings;
     }
 }

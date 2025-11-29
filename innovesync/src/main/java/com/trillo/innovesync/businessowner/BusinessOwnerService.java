@@ -49,6 +49,20 @@ public class BusinessOwnerService {
                 .filter(owner -> passwordEncoder.matches(rawPassword, owner.getPasswordHash()));
     }
 
+    public BusinessOwnerSettingsResponse getSettings(String idOrEmail) {
+        BusinessOwner owner = findByIdOrEmail(idOrEmail);
+        return BusinessOwnerSettingsResponse.from(owner.getSettings());
+    }
+
+    public BusinessOwnerSettingsResponse updateSettings(String idOrEmail, BusinessOwnerSettingsRequest request) {
+        Objects.requireNonNull(request, "request");
+        BusinessOwner owner = findByIdOrEmail(idOrEmail);
+        BusinessOwnerSettings updated = mapRequestToSettings(request);
+        owner.setSettings(updated);
+        repository.save(owner);
+        return BusinessOwnerSettingsResponse.from(updated);
+    }
+
     private void validatePasswords(String password, String confirmPassword) {
         if (!Objects.equals(password, confirmPassword)) {
             throw new IllegalArgumentException("Passwords do not match");
@@ -61,5 +75,32 @@ public class BusinessOwnerService {
 
     private String safeTrim(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private BusinessOwner findByIdOrEmail(String idOrEmail) {
+        if (idOrEmail == null || idOrEmail.trim().isEmpty()) {
+            throw new IllegalArgumentException("Business owner id or email is required");
+        }
+        String trimmed = idOrEmail.trim();
+        return (trimmed.contains("@")
+                ? repository.findByEmailIgnoreCase(normalizeEmail(trimmed))
+                : repository.findById(trimmed))
+                .orElseThrow(() -> new IllegalArgumentException("Business owner not found: " + trimmed));
+    }
+
+    private BusinessOwnerSettings mapRequestToSettings(BusinessOwnerSettingsRequest request) {
+        BusinessOwnerSettings settings = new BusinessOwnerSettings();
+        settings.setEmailAlertsEnabled(request.getEmailAlertsEnabled());
+        settings.setSmsAlertsEnabled(request.getSmsAlertsEnabled());
+        settings.setPushNotificationsEnabled(request.getPushNotificationsEnabled());
+        settings.setDigestCadence(request.getDigestCadence().trim());
+        settings.setProfileVisibility(request.getProfileVisibility().trim());
+        settings.setDataSharingEnabled(request.getDataSharingEnabled());
+        settings.setAutoSaveTripsEnabled(request.getAutoSaveTripsEnabled());
+        settings.setLanguage(request.getLanguage().trim());
+        settings.setCurrency(request.getCurrency().trim());
+        settings.setTimezone(request.getTimezone().trim());
+        settings.setTravelVibes(request.getTravelVibes());
+        return settings;
     }
 }

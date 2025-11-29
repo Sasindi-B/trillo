@@ -18,6 +18,7 @@ public class BusinessOwner {
     private String category;
     private String passwordHash;
     private Instant createdAt;
+    private BusinessOwnerSettings settings;
 
     protected BusinessOwner() {
         // For MongoDB mapper
@@ -30,6 +31,7 @@ public class BusinessOwner {
         this.category = category;
         this.passwordHash = passwordHash;
         this.createdAt = Instant.now();
+        this.settings = BusinessOwnerSettings.defaultSettings();
     }
 
     public String getId() {
@@ -58,5 +60,16 @@ public class BusinessOwner {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public BusinessOwnerSettings getSettings() {
+        if (settings == null) {
+            settings = BusinessOwnerSettings.defaultSettings();
+        }
+        return settings;
+    }
+
+    public void setSettings(BusinessOwnerSettings settings) {
+        this.settings = settings == null ? BusinessOwnerSettings.defaultSettings() : settings;
     }
 }

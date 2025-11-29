@@ -21,6 +21,7 @@ public class Traveller {
     private List<String> interests;
     private String passwordHash;
     private Instant createdAt;
+    private TravellerSettings settings;
 
     protected Traveller() {
         // For MongoDB mapper
@@ -33,6 +34,7 @@ public class Traveller {
         this.interests = interests == null ? new ArrayList<>() : new ArrayList<>(interests);
         this.passwordHash = passwordHash;
         this.createdAt = Instant.now();
+        this.settings = TravellerSettings.defaultSettings();
     }
 
     public String getId() {
@@ -61,5 +63,16 @@ public class Traveller {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public TravellerSettings getSettings() {
+        if (settings == null) {
+            settings = TravellerSettings.defaultSettings();
+        }
+        return settings;
+    }
+
+    public void setSettings(TravellerSettings settings) {
+        this.settings = settings == null ? TravellerSettings.defaultSettings() : settings;
     }
 }

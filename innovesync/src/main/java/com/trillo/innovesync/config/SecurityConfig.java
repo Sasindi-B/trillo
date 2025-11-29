@@ -29,6 +29,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/travellers/signup").permitAll()
                         .requestMatchers("/api/business-owners/signup").permitAll()
+                        .requestMatchers("/api/travellers/**/settings").permitAll()
+                        .requestMatchers("/api/business-owners/**/settings").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(httpBasic -> httpBasic.disable());
