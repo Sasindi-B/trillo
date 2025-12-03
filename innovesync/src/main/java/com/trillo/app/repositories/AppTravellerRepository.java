@@ -6,6 +6,8 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import com.trillo.app.entities.Traveller;
 
-public interface TravellerRepository extends MongoRepository<Traveller, String> {
+public interface AppTravellerRepository extends MongoRepository<Traveller, String> {
     Optional<Traveller> findByEmailIgnoreCase(String email);
 }
+
+

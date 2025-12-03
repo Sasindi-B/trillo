@@ -16,6 +16,9 @@ public class BusinessOwnerProfileRequest {
     @Size(max = 2048, message = "Google Maps URL is too long")
     private String googleMapsUrl;
 
+    @Size(max = 200, message = "Location can be up to 200 characters")
+    private String location;
+
     @Size(max = 6, message = "Provide up to 6 image URLs")
     private List<@NotBlank String> imageUrls;
 
@@ -25,6 +28,14 @@ public class BusinessOwnerProfileRequest {
 
     public String getGoogleMapsUrl() {
         return googleMapsUrl;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public List<String> getImageUrls() {

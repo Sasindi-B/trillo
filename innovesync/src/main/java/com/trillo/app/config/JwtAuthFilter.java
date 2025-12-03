@@ -1,9 +1,10 @@
 package com.trillo.app.config;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,8 +19,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Minimal JWT-like filter: expects Authorization: Bearer userId:ROLE_NAME
- * This is a placeholder until a full JWT implementation is wired.
+ * Minimal token filter that supports:
+ * 1) Authorization: Bearer userId:ROLE_NAME (simple)
+ * 2) Authorization: Bearer Base64Url(username:ROLE:ts:rand) issued by UserAccountService
  */
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
@@ -40,13 +42,26 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             return null;
         }
         String token = header.substring(7);
+        // Simple format: userId:ROLE
         String[] parts = token.split(":");
-        if (parts.length != 2) {
-            return null;
+        if (parts.length == 2) {
+            return buildAuth(parts[0], parts[1], token);
         }
-        String userId = parts[0];
-        String role = parts[1];
+        // Base64 format: username:ROLE:ts:rand
+        try {
+            String decoded = new String(Base64.getUrlDecoder().decode(token), StandardCharsets.UTF_8);
+            String[] decodedParts = decoded.split(":");
+            if (decodedParts.length >= 2) {
+                return buildAuth(decodedParts[0], decodedParts[1], token);
+            }
+        } catch (IllegalArgumentException ignored) {
+            // invalid base64
+        }
+        return null;
+    }
+
+    private Authentication buildAuth(String userId, String role, String credentials) {
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
-        return new UsernamePasswordAuthenticationToken(userId, token, authorities);
+        return new UsernamePasswordAuthenticationToken(userId, credentials, authorities);
     }
 }

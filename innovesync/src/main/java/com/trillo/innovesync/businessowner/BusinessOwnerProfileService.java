@@ -54,6 +54,12 @@ public class BusinessOwnerProfileService {
         applyImages(profile, Optional.ofNullable(request.getImageUrls()).orElseGet(List::of));
         profile.touchUpdatedAt();
 
+        // Update location if provided
+        if (request.getLocation() != null) {
+            owner.setLocation(request.getLocation().trim());
+            businessOwnerRepository.save(owner);
+        }
+
         BusinessOwnerProfile saved = profileRepository.save(profile);
         return mapToResponse(owner, saved);
     }
@@ -165,19 +171,17 @@ public class BusinessOwnerProfileService {
                 owner.getId(),
                 owner.getBusinessName(),
                 owner.getEmail(),
-                resolveLocation(owner, profile),
+                resolveLocation(owner),
                 owner.getCategory(),
                 profile.getDescription(),
                 profile.getGoogleMapsUrl(),
                 profile.getImageUrls());
     }
 
-    private String resolveLocation(BusinessOwner owner, BusinessOwnerProfile profile) {
-        String ownerLocation = defaultString(owner.getLocation());
-        if (StringUtils.hasText(ownerLocation)) {
-            return ownerLocation;
-        }
-        return "";
+    private String resolveLocation(BusinessOwner owner) {
+        // Return the exact location saved during signup or updated in profile from the database
+        String ownerLocation = owner.getLocation();
+        return ownerLocation == null ? "" : ownerLocation;
     }
 
     private String storeFile(MultipartFile file) throws IOException {
