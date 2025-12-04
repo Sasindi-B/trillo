@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -42,6 +43,16 @@ public class BusinessOwnerProfileController {
     public ResponseEntity<BusinessOwnerProfileResponse> upsertProfile(
             @PathVariable String idOrEmail,
             @Valid @RequestBody BusinessOwnerProfileRequest request) {
+        return ResponseEntity.ok(profileService.upsertProfile(idOrEmail, request));
+    }
+
+    @PutMapping(consumes = {
+            MediaType.APPLICATION_FORM_URLENCODED_VALUE,
+            MediaType.MULTIPART_FORM_DATA_VALUE
+    }, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<BusinessOwnerProfileResponse> upsertProfileForm(
+            @PathVariable String idOrEmail,
+            @Valid @ModelAttribute BusinessOwnerProfileRequest request) {
         return ResponseEntity.ok(profileService.upsertProfile(idOrEmail, request));
     }
 

@@ -46,8 +46,9 @@ public class BusinessOwnerProfileService {
     public BusinessOwnerProfileResponse upsertProfile(String idOrEmail, BusinessOwnerProfileRequest request) {
         Objects.requireNonNull(request, "request");
         BusinessOwner owner = findOwner(idOrEmail);
-        BusinessOwnerProfile profile = profileRepository.findByOwnerId(owner.getId())
-                .orElseGet(() -> new BusinessOwnerProfile(owner.getId()));
+        String ownerId = owner.getId();
+        BusinessOwnerProfile profile = profileRepository.findByOwnerId(ownerId)
+                .orElseGet(() -> new BusinessOwnerProfile(ownerId));
 
         profile.setDescription(defaultString(request.getDescription()));
         profile.setGoogleMapsUrl(defaultString(request.getGoogleMapsUrl()));
@@ -56,7 +57,8 @@ public class BusinessOwnerProfileService {
 
         // Update location if provided
         if (request.getLocation() != null) {
-            owner.setLocation(request.getLocation().trim());
+            String trimmedLocation = request.getLocation().trim();
+            owner.setLocation(trimmedLocation);
             businessOwnerRepository.save(owner);
         }
 

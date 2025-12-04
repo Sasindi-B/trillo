@@ -38,7 +38,19 @@ public class BusinessOwnerProfileRequest {
         this.location = location;
     }
 
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setGoogleMapsUrl(String googleMapsUrl) {
+        this.googleMapsUrl = googleMapsUrl;
+    }
+
     public List<String> getImageUrls() {
         return imageUrls;
+    }
+
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
     }
 }
