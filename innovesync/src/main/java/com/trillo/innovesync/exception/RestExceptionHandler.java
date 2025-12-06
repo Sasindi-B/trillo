@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.util.pattern.PatternParseException;
 
 @ControllerAdvice
 public class RestExceptionHandler {
@@ -43,6 +44,16 @@ public class RestExceptionHandler {
                         "timestamp", Instant.now().toString(),
                         "status", HttpStatus.BAD_REQUEST.value(),
                         "error", "Bad request",
+                        "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(PatternParseException.class)
+    public ResponseEntity<Map<String, Object>> handlePatternParse(PatternParseException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "timestamp", Instant.now().toString(),
+                        "status", HttpStatus.BAD_REQUEST.value(),
+                        "error", "Invalid request path",
                         "message", ex.getMessage()));
     }
 }
