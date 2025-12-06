@@ -9,7 +9,6 @@ import jakarta.validation.constraints.NotBlank;
 public class LoginRequest {
 
     @JsonAlias({"username", "userName"})
-    @NotBlank(message = "Username or email is required")
     private String username;
 
     @JsonAlias({"email", "Email", "EMAIL", "emailAddress", "email_address"})

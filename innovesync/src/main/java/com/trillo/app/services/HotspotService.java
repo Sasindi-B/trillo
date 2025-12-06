@@ -1,49 +1,48 @@
 package com.trillo.app.services;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import com.trillo.app.dtos.BusinessDetailsResponse;
 import com.trillo.app.dtos.HotspotPageResponse;
 import com.trillo.app.dtos.HotspotResponse;
-import com.trillo.app.entities.BusinessOwner;
-import com.trillo.app.entities.BusinessProfile;
-import com.trillo.app.repositories.AppBusinessOwnerRepository;
-import com.trillo.app.repositories.BusinessProfileRepository;
+import com.trillo.innovesync.businessowner.BusinessOwner;
+import com.trillo.innovesync.businessowner.BusinessOwnerProfile;
+import com.trillo.innovesync.businessowner.BusinessOwnerProfileRepository;
+import com.trillo.innovesync.businessowner.BusinessOwnerRepository;
 
 @Service
 public class HotspotService {
 
-    private final AppBusinessOwnerRepository ownerRepository;
-    private final BusinessProfileRepository profileRepository;
+    private final BusinessOwnerRepository ownerRepository;
+    private final BusinessOwnerProfileRepository profileRepository;
 
-    public HotspotService(AppBusinessOwnerRepository ownerRepository, BusinessProfileRepository profileRepository) {
+    public HotspotService(BusinessOwnerRepository ownerRepository, BusinessOwnerProfileRepository profileRepository) {
         this.ownerRepository = ownerRepository;
         this.profileRepository = profileRepository;
     }
 
     public HotspotPageResponse getHotspots(String category, String search, int page, int size) {
+        // Fetch all business owners from MongoDB (always fresh data)
         List<BusinessOwner> owners = ownerRepository.findAll();
 
         List<BusinessOwner> filtered = owners.stream()
                 .filter(o -> filterCategory(o, category))
                 .filter(o -> filterSearch(o, search))
-                .sorted(Comparator.comparing(BusinessOwner::getName, String.CASE_INSENSITIVE_ORDER))
+                .sorted(Comparator.comparing(BusinessOwner::getBusinessName, String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList());
 
         int start = Math.min(page * size, filtered.size());
         int end = Math.min(start + size, filtered.size());
         List<BusinessOwner> slice = filtered.subList(start, end);
+        
+        // Map to response - this fetches fresh profile data for each owner
         List<HotspotResponse> items = slice.stream()
                 .map(this::toHotspotResponse)
                 .toList();
@@ -55,39 +54,46 @@ public class HotspotService {
     public BusinessDetailsResponse getBusinessDetails(String businessId) {
         BusinessOwner owner = ownerRepository.findById(businessId)
                 .orElseThrow(() -> new IllegalArgumentException("Business not found"));
-        Optional<BusinessProfile> profileOpt = profileRepository.findByOwnerId(owner.getId());
-        List<String> images = profileOpt.map(BusinessProfile::getImages)
+        Optional<BusinessOwnerProfile> profileOpt = profileRepository.findByOwnerId(owner.getId());
+        List<String> images = profileOpt.map(BusinessOwnerProfile::getImageUrls)
                 .orElseGet(List::of)
                 .stream()
                 .limit(6)
-                .map(img -> img.getUrl())
                 .collect(Collectors.toList());
 
         return new BusinessDetailsResponse(
                 owner.getId(),
-                owner.getName(),
+                owner.getBusinessName(),
                 owner.getCategory(),
                 owner.getLocation(),
-                profileOpt.map(BusinessProfile::getDescription).orElse(""),
-                profileOpt.map(BusinessProfile::getGoogleMapsUrl).orElse(""),
+                profileOpt.map(BusinessOwnerProfile::getDescription).orElse(""),
+                profileOpt.map(BusinessOwnerProfile::getGoogleMapsUrl).orElse(""),
                 images,
                 owner.getEmail(),
-                owner.getName(),
+                owner.getBusinessName(),
                 List.of());
     }
 
     private HotspotResponse toHotspotResponse(BusinessOwner owner) {
-        Optional<BusinessProfile> profileOpt = profileRepository.findByOwnerId(owner.getId());
+        // Always fetch fresh profile data from MongoDB
+        Optional<BusinessOwnerProfile> profileOpt = profileRepository.findByOwnerId(owner.getId());
+        
+        // Get preview image from profile (first image if available)
         String preview = profileOpt
-                .flatMap(p -> p.getImages().stream().findFirst())
-                .map(img -> img.getUrl())
+                .map(BusinessOwnerProfile::getImageUrls)
+                .orElseGet(List::of)
+                .stream()
+                .findFirst()
                 .orElse("");
+        
+        // Return response with updated location from BusinessOwner entity
+        // (location is updated when business owner updates their profile)
         return new HotspotResponse(
                 owner.getId(),
-                owner.getName(),
+                owner.getBusinessName(),
                 owner.getCategory(),
-                owner.getLocation(),
-                preview,
+                owner.getLocation(), // This reflects updates made via profile endpoint
+                preview, // This comes from BusinessOwnerProfile
                 owner.getId(),
                 owner.getCreatedAt());
     }
@@ -104,9 +110,20 @@ public class HotspotService {
             return true;
         }
         String needle = search.toLowerCase(Locale.ROOT);
-        return contains(owner.getName(), needle)
+        boolean matchesBasic = contains(owner.getBusinessName(), needle)
                 || contains(owner.getCategory(), needle)
                 || contains(owner.getLocation(), needle);
+        
+        // Also search in profile description if available
+        if (!matchesBasic) {
+            Optional<BusinessOwnerProfile> profileOpt = profileRepository.findByOwnerId(owner.getId());
+            if (profileOpt.isPresent()) {
+                BusinessOwnerProfile profile = profileOpt.get();
+                matchesBasic = contains(profile.getDescription(), needle);
+            }
+        }
+        
+        return matchesBasic;
     }
 
     private boolean contains(String value, String needle) {

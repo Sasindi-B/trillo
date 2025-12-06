@@ -2,11 +2,9 @@ package com.trillo.innovesync.auth;
 
 import org.springframework.stereotype.Service;
 
+import com.trillo.innovesync.businessowner.BusinessOwnerService;
 import com.trillo.innovesync.exception.InvalidCredentialsException;
 import com.trillo.innovesync.traveller.TravellerService;
-import com.trillo.innovesync.businessowner.BusinessOwnerService;
-import com.trillo.innovesync.auth.UserAccount;
-import com.trillo.innovesync.auth.Role;
 
 @Service
 public class AuthService {
@@ -25,7 +23,7 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         if (request == null || request.getPassword() == null || request.getPassword().trim().isEmpty()) {
-            throw new InvalidCredentialsException("Username or email is required");
+            throw new InvalidCredentialsException("Password is required");
         }
         String inputUsername = firstNonBlank(request.getUsername(), request.getEmail());
         if (inputUsername == null) {
@@ -36,7 +34,8 @@ public class AuthService {
         return userAccountService.authenticate(username, request.getPassword())
                 .map(account -> new LoginResponse(
                         userAccountService.issueToken(account),
-                        account.getUsername(),
+                        account.getUsername(), // Use email as ID for built-in accounts
+                        account.getUsername(), // email
                         account.getDisplayName(),
                         account.getRole()))
                 // If not found, try traveller accounts stored in MongoDB
@@ -49,6 +48,7 @@ public class AuthService {
                                     Role.TRAVELLER);
                             return new LoginResponse(
                                     userAccountService.issueToken(principal),
+                                    traveller.getId(), // Use MongoDB ID
                                     traveller.getEmail(),
                                     traveller.getFullName(),
                                     Role.TRAVELLER);
@@ -63,6 +63,7 @@ public class AuthService {
                                     Role.BUSINESS_OWNER);
                             return new LoginResponse(
                                     userAccountService.issueToken(principal),
+                                    owner.getId(), // Use MongoDB ID
                                     owner.getEmail(),
                                     owner.getBusinessName(),
                                     Role.BUSINESS_OWNER);

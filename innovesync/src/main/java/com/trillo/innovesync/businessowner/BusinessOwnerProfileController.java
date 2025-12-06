@@ -24,7 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/business-owners/{idOrEmail:.+}/profile")
+@RequestMapping({"/api/business-owners/{idOrEmail:.+}/profile", "/business-owners/{idOrEmail:.+}/profile"})
 @Validated
 public class BusinessOwnerProfileController {
 

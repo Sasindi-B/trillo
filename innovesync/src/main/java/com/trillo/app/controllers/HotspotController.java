@@ -12,7 +12,7 @@ import com.trillo.app.dtos.HotspotPageResponse;
 import com.trillo.app.services.HotspotService;
 
 @RestController
-@RequestMapping(path = "/api/hotspots", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(path = {"/api/hotspots", "/hotspots"}, produces = MediaType.APPLICATION_JSON_VALUE)
 public class HotspotController {
 
     private final HotspotService hotspotService;

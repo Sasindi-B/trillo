@@ -3,6 +3,7 @@ package com.trillo.innovesync.exception;
 import java.time.Instant;
 import java.util.Map;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -55,5 +56,19 @@ public class RestExceptionHandler {
                         "status", HttpStatus.BAD_REQUEST.value(),
                         "error", "Invalid request path",
                         "message", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DataAccessException.class)
+    public ResponseEntity<Map<String, Object>> handleDataAccess(DataAccessException ex) {
+        String message = "Database connection error. Please ensure MongoDB is running on localhost:27017";
+        if (ex.getMessage() != null && ex.getMessage().contains("Connection refused")) {
+            message = "Cannot connect to MongoDB. Please ensure MongoDB is running on localhost:27017";
+        }
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of(
+                        "timestamp", Instant.now().toString(),
+                        "status", HttpStatus.SERVICE_UNAVAILABLE.value(),
+                        "error", "Database error",
+                        "message", message));
     }
 }
