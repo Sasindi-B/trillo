@@ -11,6 +11,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
         "com.trillo.innovesync.businessowner",
         "com.trillo.innovesync.traveller",
         "com.trillo.innovesync.auth",
+        "com.trillo.innovesync.membership",
         "com.trillo.app.repositories"
 })
 public class MongoRepositoryConfig {

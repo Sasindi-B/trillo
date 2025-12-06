@@ -71,4 +71,14 @@ public class RestExceptionHandler {
                         "error", "Database error",
                         "message", message));
     }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalState(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of(
+                        "timestamp", Instant.now().toString(),
+                        "status", HttpStatus.FORBIDDEN.value(),
+                        "error", "Forbidden",
+                        "message", ex.getMessage()));
+    }
 }
