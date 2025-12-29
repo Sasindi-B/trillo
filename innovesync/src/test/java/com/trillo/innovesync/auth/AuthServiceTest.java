@@ -38,21 +38,21 @@ class AuthServiceTest {
     @Test
     void login_AsTraveller_Succeeds() {
         LoginResponse response = authService.login(new LoginRequest("traveller@innovecorp.com", "Traveller#2025"));
-        assertThat(response.role()).isEqualTo(Role.TRAVELLER);
-        assertThat(response.username()).isEqualTo("traveller@innovecorp.com");
-        assertThat(response.token()).isNotBlank();
+        assertThat(response.getUser().getRole()).isEqualTo("traveller");
+        assertThat(response.getUser().getEmail()).isEqualTo("traveller@innovecorp.com");
+        assertThat(response.getToken()).isNotBlank();
     }
 
     @Test
     void login_AsCompanyAdmin_Succeeds() {
         LoginResponse response = authService.login(new LoginRequest("admin@innovecorp.com", "Admin#2025"));
-        assertThat(response.role()).isEqualTo(Role.COMPANY_ADMIN);
+        assertThat(response.getUser().getRole()).isEqualTo("companyadmin");
     }
 
     @Test
     void login_AsBusinessOwner_Succeeds() {
         LoginResponse response = authService.login(new LoginRequest("owner@innovecorp.com", "Owner#2025"));
-        assertThat(response.role()).isEqualTo(Role.BUSINESS_OWNER);
+        assertThat(response.getUser().getRole()).isEqualTo("business");
     }
 
     @Test
@@ -67,9 +67,9 @@ class AuthServiceTest {
                 .thenReturn(Optional.of(owner));
 
         LoginResponse response = authService.login(new LoginRequest("hello@lagoon-glow.com", "Owner#2025"));
-        assertThat(response.role()).isEqualTo(Role.BUSINESS_OWNER);
-        assertThat(response.username()).isEqualTo("hello@lagoon-glow.com");
-        assertThat(response.token()).isNotBlank();
+        assertThat(response.getUser().getRole()).isEqualTo("business");
+        assertThat(response.getUser().getEmail()).isEqualTo("hello@lagoon-glow.com");
+        assertThat(response.getToken()).isNotBlank();
     }
 
     @Test
